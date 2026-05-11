@@ -1,0 +1,9 @@
+/* App-level styles — site-specific layout resets */
+
+/* Ensure the root doesn't constrain layout */
+#root {
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}

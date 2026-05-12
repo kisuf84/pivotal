@@ -5,9 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { openCalendlyPopup } from "@/lib/calendly";
 
-const STAGES = ["Pre-revenue", "Under $500K", "$500K – $1M", "$1M – $5M", "$5M – $10M", "$10M+"] as const;
+const CALENDLY_URL = "https://calendly.com/d/cyn4-rtj-mqn";
+
+const STAGES = [
+  "Pre-revenue",
+  "Under $500K",
+  "$500K – $1M",
+  "$1M – $5M",
+  "$5M – $10M",
+  "$10M+",
+] as const;
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -29,7 +37,13 @@ export const ContactForm = () => {
 
   const onChange = (field: Field) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setValues((v) => ({ ...v, [field]: e.target.value }));
-    if (errors[field]) setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -43,18 +57,23 @@ export const ContactForm = () => {
         if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
       });
       setErrors(fieldErrors);
+      // Focus the first invalid field for keyboard/SR users.
       const firstKey = Object.keys(fieldErrors)[0];
-      if (firstKey && formRef.current) formRef.current.querySelector<HTMLElement>(`#${firstKey}`)?.focus();
+      if (firstKey && formRef.current) {
+        const el = formRef.current.querySelector<HTMLElement>(`#${firstKey}`);
+        el?.focus();
+      }
       return;
     }
     setErrors({});
     setSubmitting(true);
     try {
+      // Simulated submission — wire to a backend later if needed.
       await new Promise((r) => setTimeout(r, 600));
       setSubmitted(true);
       toast({ title: "Message received", description: "We'll be in touch within 48 hours." });
       setValues({ name: "", email: "", company: "", stage: "", message: "" });
-    } catch {
+    } catch (err) {
       setSubmitError("Something went wrong. Please try again, or book a Clarity Call directly.");
     } finally {
       setSubmitting(false);
@@ -67,11 +86,17 @@ export const ContactForm = () => {
         <p className="text-lg font-semibold text-foreground">Thank you.</p>
         <p className="mt-2 text-ink-soft">
           Your message has been received. We'll get back to you within 48 hours.
-          If you'd like to move faster, you can book a Clarity Call directly.
+          If you'd like to move faster, you can also book a Clarity Call directly.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="accent" onClick={openCalendlyPopup}>Book a Clarity Call</Button>
-          <Button variant="outline" onClick={() => setSubmitted(false)}>Send another message</Button>
+          <Button variant="accent" asChild>
+            <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
+              Book a Clarity Call
+            </a>
+          </Button>
+          <Button variant="outline" onClick={() => setSubmitted(false)}>
+            Send another message
+          </Button>
         </div>
       </div>
     );
@@ -98,9 +123,16 @@ export const ContactForm = () => {
         </div>
         <div>
           <Label htmlFor="stage">Business stage <span className="text-ink-soft font-normal">(optional)</span></Label>
-          <select id="stage" value={values.stage} onChange={onChange("stage")} className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm">
+          <select
+            id="stage"
+            value={values.stage}
+            onChange={onChange("stage")}
+            className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
+          >
             <option value="">Select revenue range</option>
-            {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
+            {STAGES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
           </select>
         </div>
       </div>
